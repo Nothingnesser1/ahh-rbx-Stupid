@@ -1,0 +1,880 @@
+local _ok, _env = pcall(getfenv, 0)
+if _ok and _env then
+    pcall(function()
+        setfenv(1, _env)
+    end)
+end
+
+-- this sucks script yk
+
+if not game:IsLoaded() then game.Loaded:Wait() end
+while not game:GetService("Players").LocalPlayer do task.wait() end
+
+local st = tick()
+local Plrs = game:GetService("Players")
+local MkService = game:GetService("MarketplaceService")
+local TwService = game:GetService("TweenService")
+local CGui = game:GetService("CoreGui")
+
+local function SafeWrite(path, text)
+    local ok, err = pcall(function() writefile(path, text) end)
+    if not ok then warn("Fail Write:", path, err) end
+end
+
+local function SafeAppend(path, text)
+    local ok, err = pcall(function() appendfile(path, text) end)
+    if not ok then warn("Fail Append:", path, err) end
+end
+
+local function SafeRead(path)
+    local ok, res = pcall(readfile, path)
+    if ok then 
+        return res
+    else 
+        warn("Fail Read:", path, res) 
+        return ""
+    end
+end
+
+local config = {
+    recordMe = false,
+    recFilter = true,
+    posSpeed = 30,
+    grpSpeed = 25,
+    grpDist = 5,
+    posRangeMin = 10,
+    posRangeMax = 1000,
+    chatLog = true,
+    avatarLog = true,
+    deathLog = true,
+    posLog = true,
+    friendsLog = true,
+    grpLog = true,
+    chatHist = true,
+    bpLog = true,
+    bpCheckDesc = true,
+    bpSpeed = 35,
+    bpDescDepth = 5,
+    avatarSpeed = 30,
+}
+
+local function LoadConfig(infoPath)
+    local c = SafeRead(infoPath)
+    if c == "" then return end
+    for line in c:gmatch("[^\r\n]+") do
+        local ln = line:match("^%s*(.-)%s*$") or ""
+        if ln:match("^Record myself:") then
+            local v = ln:match("Record myself:%s*(%S+)")
+            if v then config.recordMe = (v:lower() == "true") end
+        elseif ln:match("^Record filter content:") then
+            local v = ln:match("Record filter content:%s*(%S+)")
+            if v then config.recFilter = (v:lower() == "true") end
+        elseif ln:match("^Player position check log speed:") then
+            local v = ln:match("Player position check log speed:%s*(%d+)")
+            local n = tonumber(v) if n and n >= 1 then config.posSpeed = n end
+        elseif ln:match("^Players Chat log%s*=") then
+            local v = ln:match("Players Chat log%s*=%s*(%S+)")
+            if v then config.chatLog = (v:lower() == "true") end
+        elseif ln:match("^Players Avatar log%s*=") then
+            local v = ln:match("Players Avatar log%s*=%s*(%S+)")
+            if v then config.avatarLog = (v:lower() == "true") end
+        elseif ln:match("^Players Death log%s*=") then
+            local v = ln:match("Players Death log%s*=%s*(%S+)")
+            if v then config.deathLog = (v:lower() == "true") end
+        elseif ln:match("^Players Position%s*=") then
+            local v = ln:match("Players Position%s*=%s*(%S+)")
+            if v then config.posLog = (v:lower() == "true") end
+        elseif ln:match("^Players Friends log%s*=") then
+            local v = ln:match("Players Friends log%s*=%s*(%S+)")
+            if v then config.friendsLog = (v:lower() == "true") end
+        elseif ln:match("^Player Group log%s*=") then
+            local v = ln:match("Player Group log%s*=%s*(%S+)")
+            if v then config.grpLog = (v:lower() == "true") end
+        elseif ln:match("^Group Recording speed:") then
+            local v = ln:match("Group Recording speed:%s*(%d+)")
+            local n = tonumber(v) if n and n >= 1 then config.grpSpeed = n end
+        elseif ln:match("^Group definition distance%s*%(studs%)%s*:%s*(%d+)") then
+            local v = ln:match("Group definition distance%s*%(studs%)%s*:%s*(%d+)")
+            local n = tonumber(v) if n and n >= 1 then config.grpDist = n end
+        elseif ln:match("^Players Chat History log%s*=") then
+            local v = ln:match("Players Chat History log%s*=%s*(%S+)")
+            if v then config.chatHist = (v:lower() == "true") end
+        elseif ln:match("^Players Backpack log%s*=") then
+            local v = ln:match("Players Backpack log%s*=%s*(%S+)")
+            if v then config.bpLog = (v:lower() == "true") end
+        elseif ln:match("^Check descendants within the tool%s*=") then
+            local v = ln:match("Check descendants within the tool%s*=%s*(%S+)")
+            if v then config.bpCheckDesc = (v:lower() == "true") end
+        elseif ln:match("^Players Backpack recording speed:%s*(%d+)") then
+            local v = ln:match("Players Backpack recording speed:%s*(%d+)")
+            local n = tonumber(v) if n and n >= 1 then config.bpSpeed = n end
+        elseif ln:match("^Backpack tool descendant check depth:%s*(%d+)") then
+            local v = ln:match("Backpack tool descendant check depth:%s*(%d+)")
+            local n = tonumber(v) if n and n >= 1 and n <= 50 then config.bpDescDepth = n end
+        elseif ln:match("^Players Avatar recording speed:") then
+            local v = ln:match("Players Avatar recording speed:%s*(%d+)")
+            local n = tonumber(v) if n and n >= 1 then config.avatarSpeed = n end
+        end
+    end
+end
+
+local infoPath = "!chat logs/Meow Pls See Me.json"
+local function InitInfo()
+    if not isfile(infoPath) then
+        local dNow = os.date("*t")
+        local dStr = string.format("%04dy %02dm %02dd %02dh %02dm %02ds",dNow.year,dNow.month,dNow.day,dNow.hour,dNow.min,dNow.sec)
+        local template = [=[
+:::    .:::    .:::.     :::::::::::: ::    .:  : :: :::.    :::.   .,-:::::/    :::.    :::. .,:::::: .::::::.  .::::::. .,:::::: :::::::..   
+`;;;;,  `;;; .;;;;;;;.  ;;;;;;;;'''' ,;;    ;;,  ;;; `;;;;,  `;;; ,;;-'````'    `;;;;,  `;;; ;;;;'''' ;;;`    ` ;;;`    ` ;;;;'''' ;;;;``;;;;  
+  [[[[[. '[[ ,[[     \[[,     [[     ,[[[,,,[[[  [[[  [[[[[. '[[[ [[   [[[[[[/   [[[[[. '[[ [[cccc   '[==/[[[[,'[==/[[[[, [[cccc    [[[,/[[['  
+  $$$ "Y$c$$ $$$,     $$$     $$     "$$$"""$$$  $$$  $$$ "Y$c$$" $$c.    "$$    $$$ "Y$c$$ $$""""     '''    $  '''    $ $$""""    $$$$$$c    
+  888    Y88 "888,_ _,88P     88,     888   "88o 888  888    Y88 `Y8bo,,,o88o   888    Y88 888oo,__  88b    dP 88b    dP 888oo,__  888b "88bo,
+  MMM     YM  "YMMMMMP"      MMM     MMM    YMM  MMM  MMM     YM   `'YMUP"YMM   MMM     YM """"YUMMM  "YMmMY"   "YMmMY"  """"YUMMM MMMM   "W" 
+::::::::::.  :::        :::.     .-:.     ::- ..,::::::  :::::::..        :::         ...       .,-:::::/   .::::::.                         
+`;;;```.;;; ;;;        ;;`;;     ';;.   ;;;;' ;;;;''''  ;;;;``;;;;       ;;;      .;;;;;;;.  ,;;-'````'   ;;;`    `                         
+`]]nnn]]'  [[[       ,[[ '[[,     '[[,[[['    [[cccc    [[[,/[[['       [[[     ,[[     \[[,[[[   [[[[[[/'[==/[[[[,                        
+  $$$""    $$'       c$$$cc$$$c     c$$"      $$""""    $$$$$$c         $$'     $$$,     $$$"$$c.    "$$   '''    $                        
+  888o     o88oo,.__ 888   888,   ,8P"`       888oo,__  888b "88bo,    o88oo,.__"888,_ _,88P `Y8bo,,,o88o 88b    dP                        
+  YMMMb    """"YUMMM YMM   ""`  mM"          """"YUMMM MMMM   "W"     """"YUMMM  "YMMMMMP"    `'YMUP"YMM  "YMmMY"                         
+[[•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•=•]]
+
+made by Nothingnesser
+
+level v0.1 silly player logs
+I'm too lazy to take the test
+
+============================ Description ============================
+
+These logs txt will be stored in the folder with the game name.
+• Executor Workspace <- (folder)
+|• !Chat logs <- (folder)
+  |• Games Logs <- (folder)
+  | |• GameName_0000y-00m-00d... <- (folder) When you use the script it will automatically create
+  |   |• Players chat logs.json               <-|
+  |   |• Players friends.json                 <-|
+  |   |• Players Death Time.json              <-|
+  |   |• Players group range.json             <-|
+  |   |• Players Position.json                <-|
+  |   |• Players Avatar (folder)              <-|
+  |   |• Players chat History (folder)        <-|
+  |   |• Players backpack Logs (folder)       <-|
+  |• Meow Pls See Me.json <- You are seeing <---| Update- settings- History-
+    ...
+
+============================ Usage History ============================
+
+Date of Use script: 0000years 00months 00days 00hours 00minute 00second
+
+Number of folders recorded: 0
+
+===== Settings =====
+Record myself: false
+Record filter content: true
+
+=== Enabling and disabling logging ===
+Players Chat log = true
+Players Avatar log = true
+Players Death log = true
+Players Friends log = true
+Players Chat History log = true
+Players Backpack log = true
+Player Group log = true
+Players Position = true
+
+-- - - speed = The setting is in seconds, the higher the value, the slower the check.
+
+Check descendants within the tool = true
+Players Backpack recording speed: 25
+Backpack tool descendant check depth: 5
+-- Must be between 1 and 50
+
+Group Recording speed: 25
+Group definition distance (studs): 5
+
+Player position check log speed: 25
+Player position check range (studs): 10, 1000
+
+Players Avatar recording speed: 30
+]=]
+        template = template:gsub("0000years 00months 00days 00hours 00minute 00second", dStr)
+        SafeWrite(infoPath, template)
+    end
+end
+
+InitInfo()
+LoadConfig(infoPath)
+
+local run = true
+local ok, pInfo = pcall(function() return MkService:GetProductInfo(game.PlaceId) end)
+local gName = ok and pInfo.Name or game.Name
+local gId = game.GameId
+local jId = game.JobId
+local dNow = os.date("*t")
+local dStr = string.format("%04dy %02dm %02dd %02dh %02dm %02ds",dNow.year,dNow.month,dNow.day,dNow.hour,dNow.min,dNow.sec)
+
+local mainDir = "!chat logs"
+if not isfolder(mainDir) then makefolder(mainDir) end
+local gameDir = mainDir.."/Games Logs"
+if not isfolder(gameDir) then makefolder(gameDir) end
+
+local tNow = os.date("*t")
+local subName = string.format("%s_%04dy-%02dm-%02dd-%02dh-%02dm-%02ds",gName,tNow.year,tNow.month,tNow.day,tNow.hour,tNow.min,tNow.sec)
+local subDir = gameDir.."/"..subName
+if not isfolder(subDir) then makefolder(subDir) end
+
+local function UpdInfo()
+    local cnt = 0
+    local fs = listfolders and listfolders(gameDir) or {}
+    if not listfolders then
+        fs = {}
+        for _, child in ipairs(listfiles(gameDir)) do
+            if isfolder(child) and child ~= infoPath then
+                table.insert(fs, child)
+            end
+        end
+    end
+    for _, f in ipairs(fs) do
+        if f ~= infoPath then
+            cnt = cnt + 1
+        end
+    end
+    local c = SafeRead(infoPath)
+    if c ~= "" then
+        c = c:gsub("Number of folders recorded: %d+", "Number of folders recorded: "..cnt)
+        SafeWrite(infoPath, c)
+    else
+        warn("InfoFile is empty or invalid.")
+    end
+end
+
+UpdInfo()
+
+local cHistDir = subDir.."/Players chat History"
+local avDir = subDir.."/Players Avatar"
+local chatLog = subDir.."/Players chat logs.json"
+local frdLog = subDir.."/Players friends.json"
+local deathLog = subDir.."/Players Death Time.json"
+local posLog = subDir.."/Players Position.json"
+local grpLog = subDir.."/Players group range.json"
+local bpDir = subDir.."/Players Backpack Logs"
+
+if config.chatHist and not isfolder(cHistDir) then makefolder(cHistDir) end
+if config.avatarLog and not isfolder(avDir) then makefolder(avDir) end
+if config.bpLog and not isfolder(bpDir) then makefolder(bpDir) end
+
+if config.chatLog then
+    SafeWrite(chatLog,string.format("Chat Log: %s (ID:%s)\nServer:%s\nStart:%02d-%02d %02d:%02d:%02d\n\n",gName,gId,jId,tNow.month,tNow.day,tNow.hour,tNow.min,tNow.sec))
+end
+if config.friendsLog then 
+    SafeWrite(frdLog, string.format("Friends in %s:\n\n", gName))
+end
+if config.deathLog then
+    SafeWrite(deathLog, "Players Death\n\n")
+end
+if config.posLog then
+    SafeWrite(posLog, "Players Position\n\n")
+end
+if config.grpLog then
+    SafeWrite(grpLog, "Players Group Range\n\n")
+end
+
+local function Elapsed()
+    local e = tick() - st
+    local h = math.floor(e / 3600)
+    local m = math.floor((e % 3600) / 60)
+    local s = math.floor(e % 60)
+    local ms = math.floor((e - math.floor(e)) * 1000)
+    return string.format("%02dh:%02dm:%02ds:%03d", h, m, s, ms)
+end
+
+local function GetDisplayUser(p)
+    if p.DisplayName == p.Name then
+        return "("..p.Name..")"
+    else
+        return p.DisplayName.." ("..p.Name..")"
+    end
+end
+
+local bpRecords = {}
+local function RecToolCont(it, indent, cDepth, mDepth, done, fPath)
+    indent = indent or 4
+    cDepth = cDepth or 1
+    mDepth = mDepth or config.bpDescDepth
+    done = done or {}
+    local iStr = string.rep(" ", indent*cDepth)
+    if done[it] then
+        SafeAppend(fPath, string.format("%s•%s(%s)[Done]\n", iStr, it.Name, it.ClassName))
+        return
+    end
+    done[it] = true
+    local ok, err = pcall(function()
+        for _, ch in ipairs(it:GetChildren()) do
+            local line
+            if ch:IsA("StringValue") or ch:IsA("NumberValue") or ch:IsA("BoolValue") or ch:IsA("IntValue") or ch:IsA("ObjectValue") then
+                line = string.format("%s•%s(%s) - Val:%s\n", iStr, ch.Name, ch.ClassName, tostring(ch.Value))
+            else
+                line = string.format("%s•%s(%s)\n", iStr, ch.Name, ch.ClassName)
+            end
+            SafeAppend(fPath, line)
+            if #ch:GetChildren() > 0 and cDepth < mDepth then
+                RecToolCont(ch, indent, cDepth+1, mDepth, done, fPath)
+            end
+        end
+    end)
+    if not ok then warn("Fail RecTool:", it.Name, err) end
+end
+
+local function InitBPLog(p)
+    if not config.bpLog then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    if bpRecords[p.UserId] then return end
+    local disp = GetDisplayUser(p)
+    local fName = disp..".json"
+    local fPath = bpDir.."/"..fName
+    if not isfile(fPath) then
+        local hd = string.format("Backpack Log for %s\nProfile:%s\n\n", disp, "https://www.roblox.com/users/"..p.UserId.."/profile")
+        SafeWrite(fPath, hd)
+    end
+    bpRecords[p.UserId] = { FilePath = fPath, IsLogging = false, StopSignal = false }
+end
+
+local function StartBP(p)
+    if not config.bpLog then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    if not bpRecords[p.UserId] then InitBPLog(p) end
+    local d = bpRecords[p.UserId]
+    if d.IsLogging then return end
+    d.IsLogging = true
+    d.StopSignal = false
+    task.spawn(function()
+        while d.IsLogging and not d.StopSignal and run do
+            local bp = p:FindFirstChild("Backpack")
+            if bp then
+                local items = bp:GetChildren()
+                if #items > 0 then
+                    local f = d.FilePath
+                    local t = Elapsed()
+                    SafeAppend(f, string.format("\n%s Backpack:\n", t))
+                    for _, it in ipairs(items) do
+                        if it:IsA("Tool") and config.bpCheckDesc then
+                            SafeAppend(f, string.format("[%s]:\n", it.Name))
+                            RecToolCont(it, 4, 1, config.bpDescDepth, {}, f)
+                        else
+                            SafeAppend(f, string.format("[%s]\n", it.Name))
+                        end
+                    end
+                end
+            end
+            task.wait(config.bpSpeed)
+        end
+    end)
+end
+
+local function StopBP(p)
+    local d = bpRecords[p.UserId]
+    if not d or (not d.IsLogging) then return end
+    d.StopSignal = true
+    d.IsLogging = false
+end
+
+local cHist = {}
+local function InitCHist(p)
+    if not config.chatHist then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    local pid = p.UserId
+    if cHist[pid] then return end
+    local disp = GetDisplayUser(p)
+    local nm = disp.." Chat History.json"
+    local path = cHistDir.."/"..nm
+    if not isfile(path) then
+        local hd = string.format("%s [Chat Hist]\nProfile: https://www.roblox.com/users/%d/profile\n\n", disp, p.UserId)
+        SafeWrite(path, hd)
+    end
+    cHist[pid] = { FilePath = path, Active = true }
+end
+
+local function RecCHist(p, msg)
+    if not config.chatHist then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    local pid = p.UserId
+    if not cHist[pid] then InitCHist(p) end
+    local data = cHist[pid]
+    if not data or not data.Active then return end
+    local f = data.FilePath
+    if not f or not isfile(f) then
+        InitCHist(p)
+        f = cHist[pid].FilePath
+    end
+    if msg:find("^#+$") and not config.recFilter then return end
+    local t = Elapsed()
+    local filtered = (msg:find("^#+$") and config.recFilter) and string.format("/!Filtered #x%d!/", #msg) or msg
+    SafeAppend(f, string.format("\n%s %s\n", t, filtered))
+end
+
+local function LeaveCHist(p)
+    if not config.chatHist then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    local pid = p.UserId
+    local data = cHist[pid]
+    if not data or not data.Active then return end
+    local f = data.FilePath
+    if not f or not isfile(f) then return end
+    SafeAppend(f, string.format("\n[%s] The player left, stop.\n", Elapsed()))
+    data.Active = false
+end
+
+local function RejoinCHist(p)
+    if not config.chatHist then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    local pid = p.UserId
+    local data = cHist[pid]
+    if not data then
+        InitCHist(p)
+        return
+    end
+    if data.Active then return end
+    data.Active = true
+    local t = Elapsed()
+    SafeAppend(data.FilePath, string.format("\n%s Resumed.\n", t))
+end
+
+local lastAct = ""
+local function RecJoinOrExist(p, exist)
+    if not run then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    if not config.chatLog then return end
+    local act = exist and "Exist" or "Join"
+    local t = Elapsed()
+    local joinTimestamp = tick() - (p.AccountAge * 86400)
+    local joinDateTable = os.date("*t", joinTimestamp)
+    local joinDate = string.format("[join date: %04d-%02d-%02d]", joinDateTable.year,joinDateTable.month,joinDateTable.day)
+    local prof = "https://www.roblox.com/users/"..p.UserId.."/profile"
+    local disp = GetDisplayUser(p)
+    local line = string.format("%s %s:%s{%s}%s\n", t, act, joinDate, prof, disp)
+    if lastAct ~= act then SafeAppend(chatLog, "\n") end
+    SafeAppend(chatLog, line)
+    lastAct = act
+    if config.chatHist then
+        InitCHist(p)
+        RejoinCHist(p)
+    end
+    if config.friendsLog then
+        task.spawn(function()
+            if lastAct ~= act then SafeAppend(frdLog, "\n") end
+            local arr = {}
+            for _, oth in ipairs(Plrs:GetPlayers()) do
+                if p:IsFriendsWith(oth.UserId) then
+                    local d = GetDisplayUser(oth)
+                    table.insert(arr, d)
+                end
+            end
+            local fTxt = (#arr > 0) and table.concat(arr, ", ") or "X"
+            local fLine = string.format("%s %s:%s{%s}%s Friends:\n%s\n",t,act,joinDate,prof,disp,fTxt)
+            SafeAppend(frdLog, fLine.."\n")
+        end)
+    end
+    StartBP(p)
+end
+
+local function RecLeave(p)
+    if not run then return end
+    if p == Plrs.LocalPlayer then
+        StopAll()
+        return
+    end
+    if config.chatLog then
+        local t = Elapsed()
+        local prof = "https://www.roblox.com/users/"..p.UserId.."/profile"
+        local disp = GetDisplayUser(p)
+        local line = string.format("%s Leave:{%s}%s\n", t, prof, disp)
+        if lastAct ~= "Leave" then SafeAppend(chatLog, "\n") end
+        SafeAppend(chatLog, line)
+        lastAct = "Leave"
+    end
+    if config.chatHist then
+        LeaveCHist(p)
+    end
+    StopBP(p)
+    StopAvatar(p)
+end
+
+local function RecChat(p, msg)
+    if not run then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    if not config.chatLog then return end
+    if msg:find("^#+$") and not config.recFilter then return end
+    local t = Elapsed()
+    local prof = "https://www.roblox.com/users/"..p.UserId.."/profile"
+    local disp = GetDisplayUser(p)
+    local fmsg = (msg:find("^#+$") and config.recFilter) and string.format("/!Filtered #x%d!/", #msg) or msg
+    local line = string.format("%s Chat:{%s}%s: %s\n", t, prof, disp, fmsg)
+    if lastAct ~= "Chat" then SafeAppend(chatLog, "\n") end
+    SafeAppend(chatLog, line)
+    lastAct = "Chat"
+    if config.chatHist then
+        task.spawn(function()
+            RecCHist(p, msg)
+        end)
+    end
+end
+
+local function RecDeath(p)
+    if not run then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    if not config.deathLog then return end
+    local t = Elapsed()
+    local disp = GetDisplayUser(p)
+    local prof = "https://www.roblox.com/users/"..p.UserId.."/profile"
+    local line = string.format("%s Death:{%s} %s\n", t, prof, disp)
+    SafeAppend(deathLog, line)
+end
+
+local function SetupDeath(p, char)
+    if not config.deathLog then return end
+    local h = char:FindFirstChild("Humanoid") or char:WaitForChild("Humanoid", 10)
+    if h then
+        h.Died:Connect(function()
+            RecDeath(p)
+        end)
+    else
+        warn("No Humanoid:", p.Name)
+    end
+end
+
+local avRecords = {}
+local function GetAvatarState(p)
+    local ch = p.Character
+    if not ch then return nil end
+    local humanoid = ch:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return nil end
+    local shirtObj = ch:FindFirstChildOfClass("Shirt")
+    local pantsObj = ch:FindFirstChildOfClass("Pants")
+    local shirtId = shirtObj and shirtObj.ShirtTemplate or "X"
+    local pantsId = pantsObj and pantsObj.PantsTemplate or "X"
+    local accList = {}
+    for _, acc in ipairs(ch:GetChildren()) do
+        if acc:IsA("Accessory") then table.insert(accList, acc.Name) end
+    end
+    table.sort(accList)
+    return {
+        Shirt = shirtId,
+        Pants = pantsId,
+        Acc = accList,
+    }
+end
+
+local function CompareAvatar(oldState, newState)
+    if not oldState and newState then return true end
+    if oldState and not newState then return true end
+    if (not oldState) and (not newState) then return false end
+    if oldState.Shirt ~= newState.Shirt then return true end
+    if oldState.Pants ~= newState.Pants then return true end
+    if #oldState.Acc ~= #newState.Acc then return true end
+    for i, v in ipairs(oldState.Acc) do
+        if v ~= newState.Acc[i] then return true end
+    end
+    return false
+end
+
+local function InitAvatarLog(p)
+    if not config.avatarLog then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    if avRecords[p.UserId] then return end
+    local dispStr = GetDisplayUser(p)
+    local fileName = dispStr..".json"
+    local filePath = avDir.."/"..fileName
+    if not isfile(filePath) then
+        local header = string.format("Avatar Log for %s\nProfile: https://www.roblox.com/users/%d/profile\n\n",dispStr,p.UserId)
+        SafeWrite(filePath, header)
+    end
+    avRecords[p.UserId] = { FilePath = filePath, IsLogging = false, StopSignal = false, LastState = nil }
+end
+
+local function StartAvatar(p)
+    if not config.avatarLog then return end
+    if (not config.recordMe) and p == Plrs.LocalPlayer then return end
+    InitAvatarLog(p)
+    local data = avRecords[p.UserId]
+    if not data or data.IsLogging then return end
+    data.IsLogging = true
+    data.StopSignal = false
+    task.spawn(function()
+        while data.IsLogging and not data.StopSignal and run do
+            local newState = GetAvatarState(p)
+            if CompareAvatar(data.LastState, newState) then
+                data.LastState = newState
+                local t = Elapsed()
+                local fp = data.FilePath
+                if not newState then
+                    local line = string.format("\n%s avatar is not loaded or dead now.\n", t)
+                    SafeAppend(fp, line)
+                else
+                    local line = string.format("\n%s avatar changed:\n[Shirt]: %s\n[Pants]: %s\n[Acc]:",t,newState.Shirt,newState.Pants)
+                    if #newState.Acc > 0 then
+                        line = line.."\n"
+                        for _, aName in ipairs(newState.Acc) do
+                            line = line .. string.format(" - %s\n", aName)
+                        end
+                    else
+                        line = line.." X\n"
+                    end
+                    SafeAppend(fp, line)
+                end
+            end
+            task.wait(config.avatarSpeed)
+        end
+    end)
+end
+
+function StopAvatar(p)
+    local data = avRecords[p.UserId]
+    if data and data.IsLogging then
+        data.StopSignal = true
+        data.IsLogging = false
+    end
+end
+
+function StopAll()
+    if run then
+        local e = Elapsed()
+        local msg = string.format("\n\n%s LocalPlayer Stopped(leave)\n", e)
+        if config.chatLog then SafeAppend(chatLog, msg) end
+        if config.friendsLog then SafeAppend(frdLog, msg) end
+        if config.deathLog then SafeAppend(deathLog, msg) end
+        if config.posLog then SafeAppend(posLog, msg) end
+        if config.grpLog then SafeAppend(grpLog, msg) end
+        if config.avatarLog then
+            for _, v in pairs(avRecords) do
+                v.StopSignal = true
+                v.IsLogging = false
+            end
+        end
+        if config.bpLog then
+            for _, v in pairs(bpRecords) do
+                v.StopSignal = true
+                v.IsLogging = false
+            end
+        end
+        run = false
+    end
+end
+
+local function RecGroups()
+    if not config.grpLog then return end
+    while run do
+        local t = Elapsed()
+        local hd = string.format("%s [Group]:\n", t)
+        local gl = {}
+        local arr = Plrs:GetPlayers()
+        local dist = config.grpDist
+        local recordedGroups = {}
+        for i = 1, #arr do
+            local a = arr[i]
+            if not a.Character then continue end
+            local hrp = a.Character:FindFirstChild("HumanoidRootPart") or a.Character:FindFirstChild("Torso")
+            if not hrp then continue end
+            local posA = hrp.Position
+            local dispA = GetDisplayUser(a)
+            local urlA = "https://www.roblox.com/users/"..a.UserId.."/profile"
+            local pListDisp = {dispA}
+            local pListURL = {urlA}
+            local pListName = {a.Name}
+            for j = i+1, #arr do
+                local b = arr[j]
+                if not b.Character then continue end
+                local hrpB = b.Character:FindFirstChild("HumanoidRootPart") or b.Character:FindFirstChild("Torso")
+                if hrpB then
+                    local posB = hrpB.Position
+                    if (posA - posB).magnitude <= dist then
+                        table.insert(pListDisp, GetDisplayUser(b))
+                        table.insert(pListURL, "https://www.roblox.com/users/"..b.UserId.."/profile")
+                        table.insert(pListName, b.Name)
+                    end
+                end
+            end
+            if #pListDisp > 1 then
+                table.sort(pListName)
+                local groupKey = table.concat(pListName, ", ")
+                if not recordedGroups[groupKey] then
+                    recordedGroups[groupKey] = true
+                    local dispStr = "["..table.concat(pListDisp, ", ").."]"
+                    local urlStr = "{"..table.concat(pListURL, ", ").."}"
+                    table.insert(gl, dispStr.." "..urlStr)
+                end
+            end
+        end
+        if #gl > 0 then
+            SafeAppend(grpLog, hd..table.concat(gl, "\n").."\n\n")
+        end
+        task.wait(config.grpSpeed)
+    end
+end
+
+local function RecPos()
+    if not config.posLog then return end
+    while run do
+        local t = Elapsed()
+        local hd = string.format("%s PlayerPos:\n", t)
+        local lines = {}
+        local me = Plrs.LocalPlayer
+        local meH = (me.Character and (me.Character:FindFirstChild("HumanoidRootPart") or me.Character:FindFirstChild("Torso")))
+        local mePos = meH and meH.Position or Vector3.new()
+        local arr = Plrs:GetPlayers()
+        table.sort(arr, function(a, b)
+            local aH = a.Character and (a.Character:FindFirstChild("HumanoidRootPart") or a.Character:FindFirstChild("Torso"))
+            local bH = b.Character and (b.Character:FindFirstChild("HumanoidRootPart") or b.Character:FindFirstChild("Torso"))
+            local aP = aH and aH.Position or Vector3.new()
+            local bP = bH and bH.Position or Vector3.new()
+            return (aP - mePos).magnitude < (bP - mePos).magnitude
+        end)
+        for _, pl in ipairs(arr) do
+            if (pl == me) and (not config.recordMe) then continue end
+            local prof = "https://www.roblox.com/users/"..pl.UserId.."/profile"
+            local disp = GetDisplayUser(pl)
+            local pos = "X"
+            local dist = "X"
+            if pl.Character then
+                local h = pl.Character:FindFirstChild("HumanoidRootPart") or pl.Character:FindFirstChild("Torso")
+                if h and h.Position then
+                    local d = (h.Position - mePos).magnitude
+                    if d >= config.posRangeMin and d <= config.posRangeMax then
+                        pos = string.format("[%.3f, %.3f, %.3f]", h.Position.X, h.Position.Y, h.Position.Z)
+                        dist = string.format("[%.3f]", d)
+                        table.insert(lines, string.format("{%s}%s=%s %s\n", prof, disp, pos, dist))
+                    end
+                end
+            end
+        end
+        SafeAppend(posLog, hd..table.concat(lines, "").."\n")
+        task.wait(config.posSpeed)
+    end
+end
+
+local function OnAdded(p)
+    RecJoinOrExist(p, false)
+    p.Chatted:Connect(function(m)
+        RecChat(p, m)
+    end)
+    p.CharacterAdded:Connect(function(c)
+        SetupDeath(p, c)
+    end)
+    if p.Character then
+        SetupDeath(p, p.Character)
+    end
+    StartBP(p)
+    StartAvatar(p)
+end
+
+local function OnRemoving(p)
+    RecLeave(p)
+end
+
+for _, pl in ipairs(Plrs:GetPlayers()) do
+    OnAdded(pl)
+end
+
+Plrs.PlayerAdded:Connect(OnAdded)
+Plrs.PlayerRemoving:Connect(OnRemoving)
+
+if config.posLog then
+    task.spawn(RecPos)
+end
+if config.grpLog then
+    task.spawn(RecGroups)
+end
+
+local function ShowNotify()
+    local ld = tick() - st
+    local dur = 5
+    local sg = Instance.new("ScreenGui")
+    sg.ResetOnSpawn = false
+    sg.IgnoreGuiInset = false
+    sg.Name = "NoteGui"
+    sg.Parent = CGui
+    local bg = Instance.new("Frame")
+    bg.BackgroundColor3 = Color3.new(0, 0, 0)
+    bg.BorderSizePixel = 0
+    bg.Size = UDim2.new(0.3, 0, 0.13, 0)
+    bg.Position = UDim2.new(1.2, 0, 0.97, 0)
+    bg.AnchorPoint = Vector2.new(1, 1)
+    bg.Parent = sg
+    local ug = Instance.new("UIGradient")
+    ug.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+    ug.Transparency = NumberSequence.new{
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 0.5)
+    }
+    ug.Parent = bg
+    local tl = Instance.new("TextLabel")
+    tl.Text = ""
+    tl.Font = Enum.Font.SourceSansBold
+    tl.TextSize = 24
+    tl.TextColor3 = Color3.new(1, 1, 1)
+    tl.BackgroundTransparency = 1
+    tl.Size = UDim2.new(1, 0, 0.6, 0)
+    tl.Parent = bg
+    local stl = Instance.new("TextLabel")
+    stl.Text = ""
+    stl.Font = Enum.Font.SourceSans
+    stl.TextSize = 18
+    stl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    stl.BackgroundTransparency = 1
+    stl.Position = UDim2.new(0, 0, 0.56, 0)
+    stl.Size = UDim2.new(1, 0, 0.4, 0)
+    stl.Parent = bg
+    local pbar = Instance.new("Frame")
+    pbar.BackgroundColor3 = Color3.new(1, 1, 1)
+    pbar.BorderSizePixel = 0
+    pbar.Size = UDim2.new(1, 0, 0.02, 0)
+    pbar.Position = UDim2.new(0, 0, 0.98, 0)
+    pbar.Parent = bg
+    local sd = Instance.new("Sound")
+    sd.SoundId = "rbxassetid://5855422149"
+    sd.Volume = 0.5
+    sd.Parent = sg
+    sd:Play()
+    local function TypeW(t, lbl, d)
+        lbl.Text = ""
+        for i = 1, #t do
+            lbl.Text = lbl.Text .. t:sub(i, i)
+            task.wait(d)
+        end
+    end
+    local function TypeE(t, lbl, d)
+        for i = #t, 1, -1 do
+            lbl.Text = t:sub(1, i - 1)
+            task.wait(d)
+        end
+    end
+    TwService:Create(bg, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Position = UDim2.new(0.97, 0, 0.97, 0)}):Play()
+    local ttx = "Nothing Logs Start"
+    local stx = string.format("Loading: %.4fs", ld)
+    task.spawn(function()
+        TypeW(ttx, tl, 0.05)
+        TypeW(stx, stl, 0.05)
+    end)
+    TwService:Create(pbar, TweenInfo.new(dur, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 0, 0.02, 0)}):Play()
+    task.wait(dur)
+    task.spawn(function()
+        TypeE(ttx, tl, 0.06)
+        TypeE(stx, stl, 0.06)
+    end)
+    TwService:Create(bg, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {BackgroundTransparency = 1}):Play()
+    TwService:Create(tl, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {TextTransparency = 1}):Play()
+    TwService:Create(stl, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {TextTransparency = 1}):Play()
+    local twOut = TwService:Create(bg, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Position = UDim2.new(1.2, 0, 0.97, 0)})
+    twOut:Play()
+    task.wait(0.5)
+    sg:Destroy()
+end
+
+task.spawn(ShowNotify)
