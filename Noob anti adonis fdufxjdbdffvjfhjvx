@@ -1,0 +1,101 @@
+local _ax = getinfo or debug.getinfo
+local _dbg = false
+local _hk = {}
+
+local _dt, _kl
+local _lb = tick()
+local _hi = 1
+local _md = 5
+
+setthreadidentity(2)
+
+local function _cs()
+    local _ct = tick()
+    local _td = _ct - _lb
+    
+    if _td > _md then
+        if _dbg then
+            warn("Delay: " .. _td .. "s")
+        end
+        _lb = _ct
+        return false
+    end
+    return true
+end
+
+local function _uh()
+    _lb = tick()
+    if _dbg then
+        warn("Update: " .. _lb)
+    end
+end
+
+for _i, _v in getgc(true) do
+    if typeof(_v) == "table" then
+        local _df = rawget(_v, "Detected")
+        local _kf = rawget(_v, "Kill")
+    
+        if typeof(_df) == "function" and not _dt then
+            _dt = _df
+            
+            local _od; _od = hookfunction(_dt, function(_ac, _in, _nc)
+                if not _cs() then
+                    if _dbg then
+                        warn("Resync...")
+                    end
+                    _uh()
+                end
+
+                if _ac ~= "_" then
+                    if _dbg then
+                        warn(`Flag\nMethod: {_ac}\nInfo: {_in}`)
+                    end
+                end
+                
+                return true
+            end)
+
+            table.insert(_hk, _dt)
+        end
+
+        if rawget(_v, "Variables") and rawget(_v, "Process") and typeof(_kf) == "function" and not _kl then
+            _kl = _kf
+            local _ok; _ok = hookfunction(_kl, function(_if)
+                if _dbg then
+                    warn(`Attempt: {_if}`)
+                end
+            end)
+
+            table.insert(_hk, _kl)
+        end
+    end
+end
+
+local _oh; _oh = hookfunction(getrenv().debug.info, newcclosure(function(...)
+    local _lf, _inf = ...
+
+    if _dt and _lf == _dt then
+        if _dbg then
+            warn(`bypass`)
+        end
+
+        return coroutine.yield(coroutine.running())
+    end
+    
+    return _oh(...)
+end))
+
+spawn(function()
+    while true do
+        task.wait(_hi)
+        if not _cs() then
+            if _dbg then
+                warn("Reestablishing...")
+            end
+            _uh()
+        end
+        game:GetService("RunService").Heartbeat:Wait()
+    end
+end)
+
+setthreadidentity(7)
