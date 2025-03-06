@@ -1,0 +1,345 @@
+_G.a = nil
+b = {
+    c = CFrame.new(0, 0, -1.70000005, 0, 0, 1, 1, 0, 0, 0, 1, 0),
+    d = CFrame.new(0, 0, -1.70000005, 0, 1, 0, 1, -0, 0, 0, 0, -1)
+}
+
+_G.f = nil
+_G.g = 0
+local h3 = 0
+local h4 = false
+local h = 3
+local h2 = 0
+_G.h = nil
+_G.i = nil
+local j = 0
+local k = 1
+l = false
+local m = 0
+local n = game.Players.LocalPlayer
+local o = Instance.new("NumberValue", workspace)
+o.Value = -40
+
+local p = Instance.new("ScreenGui", n:WaitForChild("PlayerGui"))
+p.Name = "AIControlGui"
+p.ResetOnSpawn = false
+
+p.IgnoreGuiInset = true
+p.DisplayOrder = 999
+
+local q = Instance.new("Frame", p)
+q.AnchorPoint = Vector2.new(0.5, 0.5)
+q.Position = UDim2.new(0.24, 0, 0.24, 0)
+q.Size = UDim2.new(0.3, 0, 0.23, 0)
+q.BackgroundTransparency = 0.2
+q.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+q.BorderSizePixel = 0
+
+local r = Instance.new("UICorner", q)
+r.CornerRadius = UDim.new(0, 12)
+local s = Instance.new("UIStroke", q)
+s.Thickness = 2
+s.Color = Color3.fromRGB(255, 255, 255)
+s.Transparency = 0.3
+
+local t = false
+local u, v, w
+
+local function x(input)
+    local delta = input.Position - v
+    q.Position = UDim2.new(
+        w.X.Scale,
+        w.X.Offset + delta.X,
+        w.Y.Scale,
+        w.Y.Offset + delta.Y
+    )
+end
+
+q.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or
+       input.UserInputType == Enum.UserInputType.Touch then
+        t = true
+        v = input.Position
+        w = q.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                t = false
+            end
+        end)
+    end
+end)
+
+q.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or
+       input.UserInputType == Enum.UserInputType.Touch then
+        u = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == u and t then
+        x(input)
+    end
+end)
+
+local y = Instance.new("TextButton", q)
+y.Position = UDim2.new(0.1, 0, 0.2, 0)
+y.Size = UDim2.new(0.8, 0, 0.25, 0)
+y.Text = "By Nothingnesser"
+y.BackgroundTransparency = 0.3
+y.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+y.TextColor3 = Color3.fromRGB(255, 255, 255)
+y.Font = Enum.Font.SourceSansBold
+y.TextSize = 20
+
+local z = Instance.new("UICorner", y)
+z.CornerRadius = UDim.new(0, 8)
+
+local aa = Instance.new("TextLabel", q)
+aa.Position = UDim2.new(0.1, 0, 0.6, 0)
+aa.Size = UDim2.new(0.8, 0, 0.25, 0)
+aa.Text = ">off<"
+aa.BackgroundTransparency = 1
+aa.TextColor3 = Color3.fromRGB(255, 255, 255)
+aa.Font = Enum.Font.SourceSansBold
+aa.TextSize = 18
+
+delay(0, function()
+    while true do
+        wait(0.12)
+        o.Value = math.random(-140, -65)
+        game.TweenService:Create(
+            o,
+            TweenInfo.new(0.08, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 1, true, 0),
+            {Value = math.random(80, 120)}
+        ):Play()
+    end
+end)
+
+delay(5, function()
+    local ab = Instance.new("BodyGyro", game.ReplicatedStorage)
+    ab.D = 1
+    ab.CFrame = CFrame.new(n.Character.HumanoidRootPart.CFrame.LookVector)
+    ab.P = 19800
+    ab.MaxTorque = Vector3.new(40000000, 40000000, 40000000)
+
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if _G.a ~= nil and _G.a:FindFirstChild("HumanoidRootPart") and _G.g == 1 and n.Character and n.Character.Humanoid.Health > 0 then
+            ab.Parent = n.Character.HumanoidRootPart
+            local torso = n.Character.HumanoidRootPart.Position + n.Character.HumanoidRootPart.CFrame.LookVector * 1 + n.Character.HumanoidRootPart.CFrame.RightVector * 1
+            local torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+
+            if h2 == 0 then
+                torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+            elseif h2 == 1 then
+                torso2 = _G.a.HumanoidRootPart.Position + n.Character.HumanoidRootPart.CFrame.RightVector * (o.Value / 25)
+            end
+
+            ab.CFrame = CFrame.new(
+                Vector3.new(torso.X, 0, torso.Z),
+                Vector3.new(torso2.X, 0, torso2.Z)
+            )
+            _G.i = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.CFrame.RightVector * -1 + _G.a.HumanoidRootPart.CFrame.LookVector * 0 + n.Character.HumanoidRootPart.CFrame.RightVector * 6
+
+            if _G.a.HumanoidRootPart.Position.Y - 0.5 > n.Character.HumanoidRootPart.Position.Y then
+                delay(0, function()
+                    n.Character.Humanoid.Jump = true
+                end)
+            end
+
+            if _G.a.HumanoidRootPart.Velocity.Z >= n.Character.HumanoidRootPart.CFrame.LookVector.Z or _G.a.HumanoidRootPart.Velocity.X >= n.Character.HumanoidRootPart.CFrame.LookVector.X then
+                _G.i = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.CFrame.RightVector * -1 + _G.a.HumanoidRootPart.CFrame.LookVector * -1 + n.Character.HumanoidRootPart.CFrame.RightVector * 6 - _G.a.HumanoidRootPart.Velocity / 2
+                local torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+
+                if h2 == 0 then
+                    torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+                elseif h2 == 1 then
+                    torso2 = _G.a.HumanoidRootPart.Position + n.Character.HumanoidRootPart.CFrame.RightVector * (o.Value / 25)
+                end
+
+                ab.CFrame = CFrame.new(
+                    Vector3.new(torso.X, 0, torso.Z),
+                    Vector3.new(torso2.X, 0, torso2.Z)
+                )
+
+                if (_G.a.HumanoidRootPart.Position - n.Character.HumanoidRootPart.Position).Magnitude <= 10 then
+                    _G.i = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.CFrame.RightVector * -1 + _G.a.HumanoidRootPart.CFrame.LookVector * -1 + (n.Character.HumanoidRootPart.CFrame.RightVector * 1 + n.Character.HumanoidRootPart.CFrame.LookVector * -1) - _G.a.HumanoidRootPart.Velocity / 5 + n.Character.HumanoidRootPart.CFrame.RightVector * h
+                    j = j + 1
+                    if j == 3 then
+                        h = h * -1
+                        j = 0
+                    end
+                end
+            elseif _G.a.HumanoidRootPart.Velocity.Z <= n.Character.HumanoidRootPart.CFrame.LookVector.Z or _G.a.HumanoidRootPart.Velocity.X <= n.Character.HumanoidRootPart.CFrame.LookVector.X then
+                _G.i = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.CFrame.RightVector * -1 + _G.a.HumanoidRootPart.CFrame.LookVector * -1 + n.Character.HumanoidRootPart.CFrame.RightVector * 6 + _G.a.HumanoidRootPart.Velocity / 10
+                local torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+
+                if h2 == 0 then
+                    torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+                elseif h2 == 1 then
+                    torso2 = _G.a.HumanoidRootPart.Position + n.Character.HumanoidRootPart.CFrame.RightVector * (o.Value / 25)
+                end
+
+                ab.CFrame = CFrame.new(
+                    Vector3.new(torso.X, 0, torso.Z),
+                    Vector3.new(torso2.X, 0, torso2.Z)
+                )
+
+                if (_G.a.HumanoidRootPart.Position - n.Character.HumanoidRootPart.Position).Magnitude <= 10 then
+                    _G.i = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.CFrame.RightVector * 1 + _G.a.HumanoidRootPart.CFrame.LookVector * -1 + (n.Character.HumanoidRootPart.CFrame.RightVector * 1 + n.Character.HumanoidRootPart.CFrame.LookVector * -1) + _G.a.HumanoidRootPart.Velocity / 3 + n.Character.HumanoidRootPart.CFrame.RightVector * h
+                    j = j + 1
+                    if j == 3 then
+                        h = h * -1
+                        j = 0
+                    end
+                end
+            end
+
+            if (_G.a.HumanoidRootPart.Position - n.Character.HumanoidRootPart.Position).Magnitude <= 10 then
+                h2 = 1
+            else
+                h2 = 0
+            end
+
+            if (_G.a.HumanoidRootPart.Position - n.Character.HumanoidRootPart.Position).Magnitude <= 20 then
+                if (_G.a.HumanoidRootPart.Position - n.Character["Right Arm"].Position).Magnitude <= 5 or l == true then
+                    l = true
+                    if (_G.a.HumanoidRootPart.Position - n.Character["Right Arm"].Position).Magnitude >= 7 then
+                        l = false
+                    end
+                    m = m + 1
+                    if m >= math.random(2, 4) then
+                        m = 0
+                        if k == 0 then
+                            k = -2
+                        else
+                            k = 0
+                        end
+                    end
+                    _G.i = n.Character.HumanoidRootPart.CFrame.LookVector * 5 * k + _G.a.HumanoidRootPart.Velocity / 20
+
+                    if _G.a.HumanoidRootPart.Velocity.Z >= n.Character.HumanoidRootPart.CFrame.LookVector.Z or _G.a.HumanoidRootPart.Velocity.X >= n.Character.HumanoidRootPart.CFrame.LookVector.X then
+                        _G.i = n.Character.HumanoidRootPart.CFrame.LookVector * 5 * k + _G.a.HumanoidRootPart.CFrame.RightVector * -1 + _G.a.HumanoidRootPart.CFrame.LookVector * -1 + n.Character.HumanoidRootPart.CFrame.RightVector * 6 - _G.a.HumanoidRootPart.Velocity / 2
+                        local torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+
+                        if h2 == 0 then
+                            torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+                        elseif h2 == 1 then
+                            torso2 = _G.a.HumanoidRootPart.Position + n.Character.HumanoidRootPart.CFrame.RightVector * (o.Value / 25)
+                        end
+
+                        ab.CFrame = CFrame.new(
+                            Vector3.new(torso.X, 0, torso.Z),
+                            Vector3.new(torso2.X, 0, torso2.Z)
+                        )
+                        ab.D = 1
+
+                        if (_G.a.HumanoidRootPart.Position - n.Character.HumanoidRootPart.Position).Magnitude <= 10 then
+                            _G.i = n.Character.HumanoidRootPart.CFrame.LookVector * 5 * k + _G.a.HumanoidRootPart.CFrame.RightVector * -1 + _G.a.HumanoidRootPart.CFrame.LookVector * -1 + (n.Character.HumanoidRootPart.CFrame.RightVector * 1 + n.Character.HumanoidRootPart.CFrame.LookVector * -1) - _G.a.HumanoidRootPart.Velocity / 5 + n.Character.HumanoidRootPart.CFrame.RightVector * h
+                            j = j + 1
+                            if j == 3 then
+                                h = h * -1
+                                j = 0
+                            end
+                        end
+                    elseif _G.a.HumanoidRootPart.Velocity.Z <= n.Character.HumanoidRootPart.CFrame.LookVector.Z or _G.a.HumanoidRootPart.Velocity.X <= n.Character.HumanoidRootPart.CFrame.LookVector.X then
+                        _G.i = n.Character.HumanoidRootPart.CFrame.LookVector * 5 * k + _G.a.HumanoidRootPart.CFrame.RightVector * -1 + _G.a.HumanoidRootPart.CFrame.LookVector * -1 + n.Character.HumanoidRootPart.CFrame.RightVector * 6 + _G.a.HumanoidRootPart.Velocity / 10
+                        local torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+
+                        if h2 == 0 then
+                            torso2 = _G.a.HumanoidRootPart.Position + _G.a.HumanoidRootPart.Velocity / 10
+                        elseif h2 == 1 then
+                            torso2 = _G.a.HumanoidRootPart.Position + n.Character.HumanoidRootPart.CFrame.RightVector * (o.Value / 25)
+                        end
+
+                        ab.CFrame = CFrame.new(
+                            Vector3.new(torso.X, 0, torso.Z),
+                            Vector3.new(torso2.X, 0, torso2.Z)
+                        )
+
+                        if (_G.a.HumanoidRootPart.Position - n.Character.HumanoidRootPart.Position).Magnitude <= 10 then
+                            _G.i = n.Character.HumanoidRootPart.CFrame.LookVector * 5 * k + _G.a.HumanoidRootPart.CFrame.RightVector * 1 + _G.a.HumanoidRootPart.CFrame.LookVector * -1 + (n.Character.HumanoidRootPart.CFrame.RightVector * 1 + n.Character.HumanoidRootPart.CFrame.LookVector * -1) + _G.a.HumanoidRootPart.Velocity / 3 + n.Character.HumanoidRootPart.CFrame.RightVector * h
+                            j = j + 1
+                            if j == 3 then
+                                h = h * -1
+                                j = 0
+                            end
+                        end
+                    end
+                    n.Character.Humanoid:Move(_G.i)
+                end
+
+                if n.Character:FindFirstChildOfClass("Tool") then
+                    n.Character:FindFirstChildOfClass("Tool"):Activate()
+                end
+            end
+            n.Character.Humanoid:MoveTo(_G.i)
+        else
+            ab.Parent = game.ReplicatedStorage
+        end
+    end)
+end)
+
+local function ac()
+    while _G.g == 1 do
+        wait(0.1)
+        if n.Character and n.Character:FindFirstChild("HumanoidRootPart") then
+            local playerPos = n.Character.HumanoidRootPart.Position
+            local nearbyPlayers = {}
+            for _, plr in pairs(game.Players:GetPlayers()) do
+                if plr ~= n and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local skipPlayer = false
+                    if plr.Character:FindFirstChildOfClass("ForceField") then
+                        skipPlayer = true
+                    end
+                    if plr.Character.Humanoid.Health == math.huge then
+                        skipPlayer = true
+                    end
+                    if not skipPlayer then
+                        local plrPos = plr.Character.HumanoidRootPart.Position
+                        local distance = (plrPos - playerPos).Magnitude
+                        if distance <= 35 then
+                            table.insert(nearbyPlayers, plr)
+                        end
+                    end
+                end
+            end
+            if #nearbyPlayers > 0 then
+                local closestPlayer = nil
+                local closestDistance = math.huge
+                for _, plr in pairs(nearbyPlayers) do
+                    local plrPos = plr.Character.HumanoidRootPart.Position
+                    local distance = (plrPos - playerPos).Magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = plr
+                    end
+                end
+                if closestPlayer then
+                    _G.a = closestPlayer.Character
+                end
+            else
+                _G.a = nil
+            end
+        else
+            _G.a = nil
+        end
+    end
+end
+
+local ad = false
+y.MouseButton1Click:Connect(function()
+    ad = not ad
+    if ad then
+        _G.g = 1
+        y.Text = "Stop"
+        aa.Text = "<open>"
+        spawn(ac)
+    else
+        _G.g = 0
+        y.Text = "Start"
+        aa.Text = ">off<"
+        _G.a = nil
+    end
+end)
