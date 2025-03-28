@@ -1,3 +1,0 @@
-local gay = function(f,a,gg,ot) local norm={} local lf=#f local la=#a if lf~=la then return false end for i=1,lf do local cf,ca=f:byte(i),a:byte(i) if cf~=ca then if gg then if cf>=97 and cf<=122 then cf=cf-32 end if ca>=97 and ca<=122 then ca=ca-32 end else if cf>=65 and cf<=90 then cf=cf+32 end if ca>=65 and ca<=90 then ca=ca+32 end end if cf~=ca then return false end end norm[i]=(gg and ((f:byte(i)>=97 and f:byte(i)<=122) and string.char(f:byte(i)-32) or string.char(f:byte(i))) or ((f:byte(i)>=65 and f:byte(i)<=90) and string.char(f:byte(i)+32) or string.char(f:byte(i)))) end return ot and table.concat(norm) or true end;
-
-print(gay("hElLo", "hello", 0, 0))
